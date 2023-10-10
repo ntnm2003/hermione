@@ -7,7 +7,7 @@ type Vendor{
 }
 
 input VendorInput{
-    id: ID!
+
     vendor: String!
 }
 

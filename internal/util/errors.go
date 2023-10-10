@@ -2,7 +2,6 @@ package util
 
 import (
 	"context"
-
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
@@ -18,6 +17,5 @@ func WrapGQLError(ctx context.Context, message string, code string) *gqlerror.Er
 	if ctx != nil {
 		e.Path = graphql.GetPath(ctx)
 	}
-
 	return e
 }

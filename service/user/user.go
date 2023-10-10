@@ -15,7 +15,7 @@ import (
 type Service interface {
 	// Create creates a new user.
 	Create(ctx context.Context, input model.CreateUserInput) (*ent.User, error)
-	// List lists all users by filter.
+	// List  ggVG   lists all users by filter.
 	List(ctx context.Context, filter ent.UserFilterInput) (*ent.UserConnection, error)
 }
 

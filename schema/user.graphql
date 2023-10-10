@@ -42,7 +42,7 @@ input UserFilterInput {
 
 input CreateUserInput {
 
-    id: ID!
+
     username: String!
     password: String!
     full_name: String!

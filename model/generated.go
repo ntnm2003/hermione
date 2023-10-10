@@ -17,7 +17,6 @@ type BuyItemInput struct {
 }
 
 type CreateItemInput struct {
-	ID              string    `json:"id"`
 	Item            string    `json:"item"`
 	Price           int       `json:"price"`
 	RemainingAmount int       `json:"remainingAmount"`
@@ -26,7 +25,6 @@ type CreateItemInput struct {
 }
 
 type CreateUserInput struct {
-	ID       string   `json:"id"`
 	Username string   `json:"username"`
 	Password string   `json:"password"`
 	FullName string   `json:"full_name"`
@@ -40,21 +38,21 @@ type GetTokenInput struct {
 }
 
 type ItemOps struct {
-	Create *Item `json:"create"`
-	Buy    *Item `json:"buy"`
+	Create *ent.Item `json:"create"`
+	Buy    *ent.Item `json:"buy"`
 }
 
 type ItemQueries struct {
-	List    []*Item `json:"list"`
-	TopList []*Item `json:"topList"`
-	ExpList []*Item `json:"expList"`
-	Revenue *int    `json:"revenue"`
+	List    []*ent.Item `json:"list"`
+	TopList []*ent.Item `json:"topList,omitempty"`
+	ExpList []*ent.Item `json:"expList,omitempty"`
+	Revenue *int        `json:"revenue,omitempty"`
 }
 
 type TokenOps struct {
 	GetToken      *ent.Token `json:"getToken"`
 	ExchangeToken *ent.Token `json:"exchangeToken"`
-	Logout        *ent.Token `json:"logout"`
+	Logout        *ent.Token `json:"logout,omitempty"`
 }
 
 type UserQueries struct {
@@ -62,20 +60,7 @@ type UserQueries struct {
 }
 
 type VendorInput struct {
-	ID     string `json:"id"`
 	Vendor string `json:"vendor"`
-}
-
-type Item struct {
-	ID              string      `json:"id"`
-	Item            string      `json:"item"`
-	Price           int         `json:"price"`
-	RemainingAmount int         `json:"remainingAmount"`
-	SoldAmount      int         `json:"soldAmount"`
-	Exp             time.Time   `json:"exp"`
-	VendorID        *ent.Vendor `json:"vendorID"`
-	CreatedAt       *time.Time  `json:"createdAt"`
-	UpdatedAt       *time.Time  `json:"updatedAt"`
 }
 
 type RoleType string

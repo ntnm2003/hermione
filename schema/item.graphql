@@ -1,4 +1,4 @@
-type item {
+type Item {
     id: ID!
     item: String!
     price: Int!
@@ -11,7 +11,6 @@ type item {
 }
 input CreateItemInput {
 
-    id: ID!
     item: String!
     price: Int!
     remainingAmount: Int!
@@ -24,14 +23,14 @@ input BuyItemInput {
     sold_amount: Int!
 }
 type ItemQueries {
-    list: [item!]! @goField(forceResolver: true)
-    topList: [item!] @goField(forceResolver: true)
-    expList: [item!] @goField(forceResolver: true)
-    revenue: Int @goField(forceResolver: true)
+    list: [Item!]! @goField(forceResolver: true)
+    topList: [Item!] @goField(forceResolver: true)
+    expList: [Item!] @goField(forceResolver: true)
+    revenue (id: String!): Int @goField(forceResolver: true)
 }
 type ItemOps{
-    create(input: CreateUserInput!): item! @goField(forceResolver: true)
-    buy(input: BuyItemInput!): item! @goField(forceResolver: true)
+    create(input: CreateItemInput!): Item! @goField(forceResolver: true)
+    buy(input: BuyItemInput!): Item! @goField(forceResolver: true)
 }
 extend type Query {
     item: ItemQueries! @goField(forceResolver: true)
