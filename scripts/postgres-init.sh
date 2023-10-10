@@ -8,9 +8,9 @@ if [ ! -z ${ADDRESS} ]; then
     ADDRESS_OPTS="-h ${ADDRESS}"
 fi
 
-BACKEND_API_DATABASE="backend_db"
-BACKEND_API_USER="backend_user"
-BACKEND_API_PASSWORD="backend_password"
+BACKEND_API_DATABASE="postgres"
+BACKEND_API_USER="postgres"
+BACKEND_API_PASSWORD="postgres"
 
 export PGPASSWORD=${POSTGRES_PASSWORD}
 

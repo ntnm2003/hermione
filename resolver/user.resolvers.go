@@ -18,7 +18,7 @@ func (r *mutationResolver) User(ctx context.Context) (*ent.UserOps, error) {
 
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context) (*model.UserQueries, error) {
-	return &ent.UserQuery{}, nil
+	return &model.UserQueries{}, nil
 }
 
 // ID is the resolver for the id field.
@@ -66,6 +66,7 @@ type userQueriesResolver struct{ *Resolver }
 func (r *userQueryResolver) List(ctx context.Context, obj *ent.UserQuery, filter *ent.UserFilterInput) (*ent.UserConnection, error) {
 	return r.service.User().List(ctx, *filter)
 }
-func (r *Resolver) UserQuery() graphql1.UserQueryResolver { return &userQueryResolver{r} }
+
+//func (r *Resolver) UserQuery() graphql1.UserQueriesResolver { return &userQueryResolver{r} }
 
 type userQueryResolver struct{ *Resolver }
