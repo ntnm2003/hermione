@@ -20,7 +20,11 @@ type User struct {
 func (User) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable().Unique(),
-		field.String("name").MaxLen(255).Annotations(entgql.OrderField("NAME")),
+		field.String("fullName").MaxLen(255).Annotations(entgql.OrderField("FULLNAME")),
+		field.String("username").MaxLen(255).Annotations(entgql.OrderField("USERNAME")).Unique(),
+		field.String("password").MaxLen(255).Annotations(entgql.OrderField("PASSWORD")),
+		field.String("email").Annotations(entgql.OrderField("EMAIL")).Unique(),
+		field.Enum("role").Values("ADMIN", "USER").Annotations(entgql.OrderField("ROLE")),
 		field.Time("created_at").Default(time.Now).Immutable().Annotations(entgql.OrderField("CREATED_AT")),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now).Annotations(entgql.OrderField("UPDATED_AT")),
 	}

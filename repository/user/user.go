@@ -32,7 +32,8 @@ func New(client *ent.Client) Repository {
 
 // Create creates a new user.
 func (i impl) Create(ctx context.Context, input model.CreateUserInput) (*ent.User, error) {
-	user, err := i.client.User.Create().SetName(input.Name).Save(ctx)
+	user, err := i.client.User.Create().SetFullName(input.FullName).SetUsername(input.Username).SetPassword(input.Password).
+		SetEmail(input.Email).Save(ctx)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -44,7 +45,7 @@ func (i impl) Create(ctx context.Context, input model.CreateUserInput) (*ent.Use
 func (i impl) List(ctx context.Context, filter ent.UserFilterInput) (*ent.UserConnection, error) {
 	query := i.client.User.Query()
 	if filter.Name != nil {
-		query = query.Where(user.NameContainsFold(strings.TrimSpace(*filter.Name)))
+		query = query.Where(user.FullNameContainsFold(strings.TrimSpace(*filter.Name)))
 	}
 
 	users, err := query.Paginate(ctx, filter.Pagination.After, filter.Pagination.First, filter.Pagination.Before, filter.Pagination.Last)

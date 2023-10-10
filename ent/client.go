@@ -10,10 +10,14 @@ import (
 
 	"golang-boilerplate/ent/migrate"
 
+	"golang-boilerplate/ent/item"
+	"golang-boilerplate/ent/token"
 	"golang-boilerplate/ent/user"
+	"golang-boilerplate/ent/vendor"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
 )
 
@@ -22,8 +26,14 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// Item is the client for interacting with the Item builders.
+	Item *ItemClient
+	// Token is the client for interacting with the Token builders.
+	Token *TokenClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
+	// Vendor is the client for interacting with the Vendor builders.
+	Vendor *VendorClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -37,7 +47,10 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.Item = NewItemClient(c.config)
+	c.Token = NewTokenClient(c.config)
 	c.User = NewUserClient(c.config)
+	c.Vendor = NewVendorClient(c.config)
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -71,7 +84,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:    ctx,
 		config: cfg,
+		Item:   NewItemClient(cfg),
+		Token:  NewTokenClient(cfg),
 		User:   NewUserClient(cfg),
+		Vendor: NewVendorClient(cfg),
 	}, nil
 }
 
@@ -91,16 +107,20 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:    ctx,
 		config: cfg,
+		Item:   NewItemClient(cfg),
+		Token:  NewTokenClient(cfg),
 		User:   NewUserClient(cfg),
+		Vendor: NewVendorClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		User.
+//		Item.
 //		Query().
 //		Count(ctx)
+//
 func (c *Client) Debug() *Client {
 	if c.debug {
 		return c
@@ -120,7 +140,206 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
+	c.Item.Use(hooks...)
+	c.Token.Use(hooks...)
 	c.User.Use(hooks...)
+	c.Vendor.Use(hooks...)
+}
+
+// ItemClient is a client for the Item schema.
+type ItemClient struct {
+	config
+}
+
+// NewItemClient returns a client for the Item from the given config.
+func NewItemClient(c config) *ItemClient {
+	return &ItemClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `item.Hooks(f(g(h())))`.
+func (c *ItemClient) Use(hooks ...Hook) {
+	c.hooks.Item = append(c.hooks.Item, hooks...)
+}
+
+// Create returns a builder for creating a Item entity.
+func (c *ItemClient) Create() *ItemCreate {
+	mutation := newItemMutation(c.config, OpCreate)
+	return &ItemCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Item entities.
+func (c *ItemClient) CreateBulk(builders ...*ItemCreate) *ItemCreateBulk {
+	return &ItemCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Item.
+func (c *ItemClient) Update() *ItemUpdate {
+	mutation := newItemMutation(c.config, OpUpdate)
+	return &ItemUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ItemClient) UpdateOne(i *Item) *ItemUpdateOne {
+	mutation := newItemMutation(c.config, OpUpdateOne, withItem(i))
+	return &ItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ItemClient) UpdateOneID(id uuid.UUID) *ItemUpdateOne {
+	mutation := newItemMutation(c.config, OpUpdateOne, withItemID(id))
+	return &ItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Item.
+func (c *ItemClient) Delete() *ItemDelete {
+	mutation := newItemMutation(c.config, OpDelete)
+	return &ItemDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ItemClient) DeleteOne(i *Item) *ItemDeleteOne {
+	return c.DeleteOneID(i.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ItemClient) DeleteOneID(id uuid.UUID) *ItemDeleteOne {
+	builder := c.Delete().Where(item.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ItemDeleteOne{builder}
+}
+
+// Query returns a query builder for Item.
+func (c *ItemClient) Query() *ItemQuery {
+	return &ItemQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Item entity by its id.
+func (c *ItemClient) Get(ctx context.Context, id uuid.UUID) (*Item, error) {
+	return c.Query().Where(item.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ItemClient) GetX(ctx context.Context, id uuid.UUID) *Item {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryVendors queries the vendors edge of a Item.
+func (c *ItemClient) QueryVendors(i *Item) *VendorQuery {
+	query := &VendorQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := i.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, id),
+			sqlgraph.To(vendor.Table, vendor.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, item.VendorsTable, item.VendorsColumn),
+		)
+		fromV = sqlgraph.Neighbors(i.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ItemClient) Hooks() []Hook {
+	return c.hooks.Item
+}
+
+// TokenClient is a client for the Token schema.
+type TokenClient struct {
+	config
+}
+
+// NewTokenClient returns a client for the Token from the given config.
+func NewTokenClient(c config) *TokenClient {
+	return &TokenClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `token.Hooks(f(g(h())))`.
+func (c *TokenClient) Use(hooks ...Hook) {
+	c.hooks.Token = append(c.hooks.Token, hooks...)
+}
+
+// Create returns a builder for creating a Token entity.
+func (c *TokenClient) Create() *TokenCreate {
+	mutation := newTokenMutation(c.config, OpCreate)
+	return &TokenCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Token entities.
+func (c *TokenClient) CreateBulk(builders ...*TokenCreate) *TokenCreateBulk {
+	return &TokenCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Token.
+func (c *TokenClient) Update() *TokenUpdate {
+	mutation := newTokenMutation(c.config, OpUpdate)
+	return &TokenUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TokenClient) UpdateOne(t *Token) *TokenUpdateOne {
+	mutation := newTokenMutation(c.config, OpUpdateOne, withToken(t))
+	return &TokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TokenClient) UpdateOneID(id uuid.UUID) *TokenUpdateOne {
+	mutation := newTokenMutation(c.config, OpUpdateOne, withTokenID(id))
+	return &TokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Token.
+func (c *TokenClient) Delete() *TokenDelete {
+	mutation := newTokenMutation(c.config, OpDelete)
+	return &TokenDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TokenClient) DeleteOne(t *Token) *TokenDeleteOne {
+	return c.DeleteOneID(t.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TokenClient) DeleteOneID(id uuid.UUID) *TokenDeleteOne {
+	builder := c.Delete().Where(token.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TokenDeleteOne{builder}
+}
+
+// Query returns a query builder for Token.
+func (c *TokenClient) Query() *TokenQuery {
+	return &TokenQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Token entity by its id.
+func (c *TokenClient) Get(ctx context.Context, id uuid.UUID) (*Token, error) {
+	return c.Query().Where(token.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TokenClient) GetX(ctx context.Context, id uuid.UUID) *Token {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *TokenClient) Hooks() []Hook {
+	return c.hooks.Token
 }
 
 // UserClient is a client for the User schema.
@@ -211,4 +430,110 @@ func (c *UserClient) GetX(ctx context.Context, id uuid.UUID) *User {
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
+}
+
+// VendorClient is a client for the Vendor schema.
+type VendorClient struct {
+	config
+}
+
+// NewVendorClient returns a client for the Vendor from the given config.
+func NewVendorClient(c config) *VendorClient {
+	return &VendorClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `vendor.Hooks(f(g(h())))`.
+func (c *VendorClient) Use(hooks ...Hook) {
+	c.hooks.Vendor = append(c.hooks.Vendor, hooks...)
+}
+
+// Create returns a builder for creating a Vendor entity.
+func (c *VendorClient) Create() *VendorCreate {
+	mutation := newVendorMutation(c.config, OpCreate)
+	return &VendorCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Vendor entities.
+func (c *VendorClient) CreateBulk(builders ...*VendorCreate) *VendorCreateBulk {
+	return &VendorCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Vendor.
+func (c *VendorClient) Update() *VendorUpdate {
+	mutation := newVendorMutation(c.config, OpUpdate)
+	return &VendorUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *VendorClient) UpdateOne(v *Vendor) *VendorUpdateOne {
+	mutation := newVendorMutation(c.config, OpUpdateOne, withVendor(v))
+	return &VendorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *VendorClient) UpdateOneID(id uuid.UUID) *VendorUpdateOne {
+	mutation := newVendorMutation(c.config, OpUpdateOne, withVendorID(id))
+	return &VendorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Vendor.
+func (c *VendorClient) Delete() *VendorDelete {
+	mutation := newVendorMutation(c.config, OpDelete)
+	return &VendorDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *VendorClient) DeleteOne(v *Vendor) *VendorDeleteOne {
+	return c.DeleteOneID(v.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *VendorClient) DeleteOneID(id uuid.UUID) *VendorDeleteOne {
+	builder := c.Delete().Where(vendor.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &VendorDeleteOne{builder}
+}
+
+// Query returns a query builder for Vendor.
+func (c *VendorClient) Query() *VendorQuery {
+	return &VendorQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Vendor entity by its id.
+func (c *VendorClient) Get(ctx context.Context, id uuid.UUID) (*Vendor, error) {
+	return c.Query().Where(vendor.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *VendorClient) GetX(ctx context.Context, id uuid.UUID) *Vendor {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryItem queries the item edge of a Vendor.
+func (c *VendorClient) QueryItem(v *Vendor) *ItemQuery {
+	query := &ItemQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := v.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(vendor.Table, vendor.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, vendor.ItemTable, vendor.ItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(v.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *VendorClient) Hooks() []Hook {
+	return c.hooks.Vendor
 }

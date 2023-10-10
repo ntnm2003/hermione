@@ -1,0 +1,23 @@
+
+
+type Token{
+    id: ID!
+    accessToken: String!
+    refreshToken: String!
+    user: User!
+}
+
+input GetTokenInput{
+    username: String!
+    password: String!
+}
+
+type TokenOps {
+    getToken(input: GetTokenInput!): Token!
+    exchangeToken(refreshToken: String!): Token! @goField(forceResolver: true)
+    logout(refreshToken: String!): Token @goField(forceResolver: true)
+}
+
+extend type Mutation {
+    token: TokenOps! @goField(forceResolver: true)
+}

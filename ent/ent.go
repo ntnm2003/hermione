@@ -6,7 +6,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"golang-boilerplate/ent/item"
+	"golang-boilerplate/ent/token"
 	"golang-boilerplate/ent/user"
+	"golang-boilerplate/ent/vendor"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -31,7 +34,10 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
-		user.Table: user.ValidColumn,
+		item.Table:   item.ValidColumn,
+		token.Table:  token.ValidColumn,
+		user.Table:   user.ValidColumn,
+		vendor.Table: vendor.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {
@@ -81,6 +87,7 @@ type AggregateFunc func(*sql.Selector) string
 //	GroupBy(field1, field2).
 //	Aggregate(ent.As(ent.Sum(field1), "sum_field1"), (ent.As(ent.Sum(field2), "sum_field2")).
 //	Scan(ctx, &v)
+//
 func As(fn AggregateFunc, end string) AggregateFunc {
 	return func(s *sql.Selector) string {
 		return sql.As(fn(s), end)

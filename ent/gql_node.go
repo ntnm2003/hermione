@@ -6,7 +6,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"golang-boilerplate/ent/item"
+	"golang-boilerplate/ent/token"
 	"golang-boilerplate/ent/user"
+	"golang-boilerplate/ent/vendor"
 
 	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql"
@@ -41,26 +44,170 @@ type Edge struct {
 	IDs  []uuid.UUID `json:"ids,omitempty"`  // node ids (where this edge point to).
 }
 
-func (u *User) Node(ctx context.Context) (node *Node, err error) {
+func (i *Item) Node(ctx context.Context) (node *Node, err error) {
 	node = &Node{
-		ID:     u.ID,
-		Type:   "User",
-		Fields: make([]*Field, 3),
-		Edges:  make([]*Edge, 0),
+		ID:     i.ID,
+		Type:   "Item",
+		Fields: make([]*Field, 8),
+		Edges:  make([]*Edge, 1),
 	}
 	var buf []byte
-	if buf, err = json.Marshal(u.Name); err != nil {
+	if buf, err = json.Marshal(i.Item); err != nil {
 		return nil, err
 	}
 	node.Fields[0] = &Field{
 		Type:  "string",
-		Name:  "name",
+		Name:  "item",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(i.Price); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "int",
+		Name:  "price",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(i.RemainingAmount); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
+		Type:  "int",
+		Name:  "remaining_amount",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(i.SoldAmount); err != nil {
+		return nil, err
+	}
+	node.Fields[3] = &Field{
+		Type:  "int",
+		Name:  "sold_amount",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(i.Exp); err != nil {
+		return nil, err
+	}
+	node.Fields[4] = &Field{
+		Type:  "time.Time",
+		Name:  "exp",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(i.VendorID); err != nil {
+		return nil, err
+	}
+	node.Fields[5] = &Field{
+		Type:  "uuid.UUID",
+		Name:  "vendor_id",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(i.CreatedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[6] = &Field{
+		Type:  "time.Time",
+		Name:  "created_at",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(i.UpdatedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[7] = &Field{
+		Type:  "time.Time",
+		Name:  "updated_at",
+		Value: string(buf),
+	}
+	node.Edges[0] = &Edge{
+		Type: "Vendor",
+		Name: "vendors",
+	}
+	err = i.QueryVendors().
+		Select(vendor.FieldID).
+		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
+	}
+	return node, nil
+}
+
+func (t *Token) Node(ctx context.Context) (node *Node, err error) {
+	node = &Node{
+		ID:     t.ID,
+		Type:   "Token",
+		Fields: make([]*Field, 2),
+		Edges:  make([]*Edge, 0),
+	}
+	var buf []byte
+	if buf, err = json.Marshal(t.Token); err != nil {
+		return nil, err
+	}
+	node.Fields[0] = &Field{
+		Type:  "string",
+		Name:  "token",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.UserID); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "uuid.UUID",
+		Name:  "user_id",
+		Value: string(buf),
+	}
+	return node, nil
+}
+
+func (u *User) Node(ctx context.Context) (node *Node, err error) {
+	node = &Node{
+		ID:     u.ID,
+		Type:   "User",
+		Fields: make([]*Field, 7),
+		Edges:  make([]*Edge, 0),
+	}
+	var buf []byte
+	if buf, err = json.Marshal(u.FullName); err != nil {
+		return nil, err
+	}
+	node.Fields[0] = &Field{
+		Type:  "string",
+		Name:  "fullName",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(u.Username); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "string",
+		Name:  "username",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(u.Password); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
+		Type:  "string",
+		Name:  "password",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(u.Email); err != nil {
+		return nil, err
+	}
+	node.Fields[3] = &Field{
+		Type:  "string",
+		Name:  "email",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(u.Role); err != nil {
+		return nil, err
+	}
+	node.Fields[4] = &Field{
+		Type:  "user.Role",
+		Name:  "role",
 		Value: string(buf),
 	}
 	if buf, err = json.Marshal(u.CreatedAt); err != nil {
 		return nil, err
 	}
-	node.Fields[1] = &Field{
+	node.Fields[5] = &Field{
 		Type:  "time.Time",
 		Name:  "created_at",
 		Value: string(buf),
@@ -68,10 +215,55 @@ func (u *User) Node(ctx context.Context) (node *Node, err error) {
 	if buf, err = json.Marshal(u.UpdatedAt); err != nil {
 		return nil, err
 	}
+	node.Fields[6] = &Field{
+		Type:  "time.Time",
+		Name:  "updated_at",
+		Value: string(buf),
+	}
+	return node, nil
+}
+
+func (v *Vendor) Node(ctx context.Context) (node *Node, err error) {
+	node = &Node{
+		ID:     v.ID,
+		Type:   "Vendor",
+		Fields: make([]*Field, 3),
+		Edges:  make([]*Edge, 1),
+	}
+	var buf []byte
+	if buf, err = json.Marshal(v.Vendor); err != nil {
+		return nil, err
+	}
+	node.Fields[0] = &Field{
+		Type:  "string",
+		Name:  "vendor",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(v.CreatedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "time.Time",
+		Name:  "created_at",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(v.UpdatedAt); err != nil {
+		return nil, err
+	}
 	node.Fields[2] = &Field{
 		Type:  "time.Time",
 		Name:  "updated_at",
 		Value: string(buf),
+	}
+	node.Edges[0] = &Edge{
+		Type: "Item",
+		Name: "item",
+	}
+	err = v.QueryItem().
+		Select(item.FieldID).
+		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
 	}
 	return node, nil
 }
@@ -125,8 +317,9 @@ func (c *Client) newNodeOpts(opts []NodeOption) *nodeOptions {
 // Noder returns a Node by its id. If the NodeType was not provided, it will
 // be derived from the id value according to the universal-id configuration.
 //
-//	c.Noder(ctx, id)
-//	c.Noder(ctx, id, ent.WithNodeType(typeResolver))
+//		c.Noder(ctx, id)
+//		c.Noder(ctx, id, ent.WithNodeType(typeResolver))
+//
 func (c *Client) Noder(ctx context.Context, id uuid.UUID, opts ...NodeOption) (_ Noder, err error) {
 	defer func() {
 		if IsNotFound(err) {
@@ -142,10 +335,46 @@ func (c *Client) Noder(ctx context.Context, id uuid.UUID, opts ...NodeOption) (_
 
 func (c *Client) noder(ctx context.Context, table string, id uuid.UUID) (Noder, error) {
 	switch table {
+	case item.Table:
+		query := c.Item.Query().
+			Where(item.ID(id))
+		query, err := query.CollectFields(ctx, "Item")
+		if err != nil {
+			return nil, err
+		}
+		n, err := query.Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
+	case token.Table:
+		query := c.Token.Query().
+			Where(token.ID(id))
+		query, err := query.CollectFields(ctx, "Token")
+		if err != nil {
+			return nil, err
+		}
+		n, err := query.Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
 	case user.Table:
 		query := c.User.Query().
 			Where(user.ID(id))
 		query, err := query.CollectFields(ctx, "User")
+		if err != nil {
+			return nil, err
+		}
+		n, err := query.Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
+	case vendor.Table:
+		query := c.Vendor.Query().
+			Where(vendor.ID(id))
+		query, err := query.CollectFields(ctx, "Vendor")
 		if err != nil {
 			return nil, err
 		}
@@ -227,10 +456,58 @@ func (c *Client) noders(ctx context.Context, table string, ids []uuid.UUID) ([]N
 		idmap[id] = append(idmap[id], &noders[i])
 	}
 	switch table {
+	case item.Table:
+		query := c.Item.Query().
+			Where(item.IDIn(ids...))
+		query, err := query.CollectFields(ctx, "Item")
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case token.Table:
+		query := c.Token.Query().
+			Where(token.IDIn(ids...))
+		query, err := query.CollectFields(ctx, "Token")
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
 	case user.Table:
 		query := c.User.Query().
 			Where(user.IDIn(ids...))
 		query, err := query.CollectFields(ctx, "User")
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case vendor.Table:
+		query := c.Vendor.Query().
+			Where(vendor.IDIn(ids...))
+		query, err := query.CollectFields(ctx, "Vendor")
 		if err != nil {
 			return nil, err
 		}

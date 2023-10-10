@@ -10,6 +10,150 @@ import (
 )
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (i *ItemQuery) CollectFields(ctx context.Context, satisfies ...string) (*ItemQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return i, nil
+	}
+	if err := i.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return i, nil
+}
+
+func (i *ItemQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+		switch field.Name {
+		case "vendors":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = &VendorQuery{config: i.config}
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			i.withVendors = query
+		}
+	}
+	return nil
+}
+
+type itemPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []ItemPaginateOption
+}
+
+func newItemPaginateArgs(rv map[string]interface{}) *itemPaginateArgs {
+	args := &itemPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]interface{}:
+			var (
+				err1, err2 error
+				order      = &ItemOrder{Field: &ItemOrderField{}}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithItemOrder(order))
+			}
+		case *ItemOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithItemOrder(v))
+			}
+		}
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (t *TokenQuery) CollectFields(ctx context.Context, satisfies ...string) (*TokenQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return t, nil
+	}
+	if err := t.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
+func (t *TokenQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	return nil
+}
+
+type tokenPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []TokenPaginateOption
+}
+
+func newTokenPaginateArgs(rv map[string]interface{}) *tokenPaginateArgs {
+	args := &tokenPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]interface{}:
+			var (
+				err1, err2 error
+				order      = &TokenOrder{Field: &TokenOrderField{}}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithTokenOrder(order))
+			}
+		case *TokenOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithTokenOrder(v))
+			}
+		}
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (u *UserQuery) CollectFields(ctx context.Context, satisfies ...string) (*UserQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
@@ -68,6 +212,87 @@ func newUserPaginateArgs(rv map[string]interface{}) *userPaginateArgs {
 		case *UserOrder:
 			if v != nil {
 				args.opts = append(args.opts, WithUserOrder(v))
+			}
+		}
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (v *VendorQuery) CollectFields(ctx context.Context, satisfies ...string) (*VendorQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return v, nil
+	}
+	if err := v.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return v, nil
+}
+
+func (v *VendorQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+		switch field.Name {
+		case "item":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = &ItemQuery{config: v.config}
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			v.WithNamedItem(alias, func(wq *ItemQuery) {
+				*wq = *query
+			})
+		}
+	}
+	return nil
+}
+
+type vendorPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []VendorPaginateOption
+}
+
+func newVendorPaginateArgs(rv map[string]interface{}) *vendorPaginateArgs {
+	args := &vendorPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]interface{}:
+			var (
+				err1, err2 error
+				order      = &VendorOrder{Field: &VendorOrderField{}}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithVendorOrder(order))
+			}
+		case *VendorOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithVendorOrder(v))
 			}
 		}
 	}

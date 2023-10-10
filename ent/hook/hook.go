@@ -8,6 +8,32 @@ import (
 	"golang-boilerplate/ent"
 )
 
+// The ItemFunc type is an adapter to allow the use of ordinary
+// function as Item mutator.
+type ItemFunc func(context.Context, *ent.ItemMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ItemFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.ItemMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ItemMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The TokenFunc type is an adapter to allow the use of ordinary
+// function as Token mutator.
+type TokenFunc func(context.Context, *ent.TokenMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.TokenMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TokenMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The UserFunc type is an adapter to allow the use of ordinary
 // function as User mutator.
 type UserFunc func(context.Context, *ent.UserMutation) (ent.Value, error)
@@ -17,6 +43,19 @@ func (f UserFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	mv, ok := m.(*ent.UserMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The VendorFunc type is an adapter to allow the use of ordinary
+// function as Vendor mutator.
+type VendorFunc func(context.Context, *ent.VendorMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f VendorFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.VendorMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.VendorMutation", m)
 	}
 	return f(ctx, mv)
 }
@@ -116,6 +155,7 @@ func HasFields(field string, fields ...string) Condition {
 // If executes the given hook under condition.
 //
 //	hook.If(ComputeAverage, And(HasFields(...), HasAddedFields(...)))
+//
 func If(hk ent.Hook, cond Condition) ent.Hook {
 	return func(next ent.Mutator) ent.Mutator {
 		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
@@ -130,6 +170,7 @@ func If(hk ent.Hook, cond Condition) ent.Hook {
 // On executes the given hook only for the given operation.
 //
 //	hook.On(Log, ent.Delete|ent.Create)
+//
 func On(hk ent.Hook, op ent.Op) ent.Hook {
 	return If(hk, HasOp(op))
 }
@@ -137,6 +178,7 @@ func On(hk ent.Hook, op ent.Op) ent.Hook {
 // Unless skips the given hook only for the given operation.
 //
 //	hook.Unless(Log, ent.Update|ent.UpdateOne)
+//
 func Unless(hk ent.Hook, op ent.Op) ent.Hook {
 	return If(hk, Not(HasOp(op)))
 }
@@ -157,6 +199,7 @@ func FixedError(err error) ent.Hook {
 //			Reject(ent.Delete|ent.Update),
 //		}
 //	}
+//
 func Reject(op ent.Op) ent.Hook {
 	hk := FixedError(fmt.Errorf("%s operation is not allowed", op))
 	return On(hk, op)

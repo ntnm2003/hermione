@@ -1,0 +1,19 @@
+
+type Vendor{
+    id: ID!
+    vendor: String!
+    createdAt: Time
+    updatedAt: Time
+}
+
+input VendorInput{
+    id: ID!
+    vendor: String!
+}
+
+extend type Mutation {
+    create(input: VendorInput!): Vendor! @goField(forceResolver: true)
+}
+extend type Query {
+   list(id: String!) :[Vendor!]! @goField(forceResolver: true)
+}

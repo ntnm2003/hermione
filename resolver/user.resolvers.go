@@ -13,22 +13,27 @@ import (
 
 // User is the resolver for the user field.
 func (r *mutationResolver) User(ctx context.Context) (*ent.UserOps, error) {
-	return &ent.UserOps{}, nil
+	panic(fmt.Errorf("not implemented: User - user"))
 }
 
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context) (*model.UserQueries, error) {
-	return &model.UserQueries{}, nil
+	panic(fmt.Errorf("not implemented: User - user"))
 }
 
 // ID is the resolver for the id field.
 func (r *userResolver) ID(ctx context.Context, obj *ent.User) (string, error) {
-	return obj.ID.String(), nil
+	panic(fmt.Errorf("not implemented: ID - id"))
+}
+
+// Role is the resolver for the role field.
+func (r *userResolver) Role(ctx context.Context, obj *ent.User) (model.RoleType, error) {
+	panic(fmt.Errorf("not implemented: Role - role"))
 }
 
 // Create is the resolver for the create field.
 func (r *userOpsResolver) Create(ctx context.Context, obj *ent.UserOps, input model.CreateUserInput) (*ent.User, error) {
-	return r.service.User().Create(ctx, input)
+	panic(fmt.Errorf("not implemented: Create - create"))
 }
 
 // List is the resolver for the list field.
@@ -56,17 +61,3 @@ type queryResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
 type userOpsResolver struct{ *Resolver }
 type userQueriesResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *userQueryResolver) List(ctx context.Context, obj *ent.UserQuery, filter *ent.UserFilterInput) (*ent.UserConnection, error) {
-	return r.service.User().List(ctx, *filter)
-}
-
-//func (r *Resolver) UserQuery() graphql1.UserQueriesResolver { return &userQueryResolver{r} }
-
-type userQueryResolver struct{ *Resolver }

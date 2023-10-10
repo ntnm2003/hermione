@@ -1,10 +1,17 @@
 type User {
     id: ID!
-    name: String!
+    username: String!
+    password: String!
+    full_name: String!
+    email: String!
+    role: ROLE_TYPE!
     createdAt: Time
     updatedAt: Time
 }
-
+enum ROLE_TYPE {
+    ADMIN
+    USER
+}
 enum UserOrderField {
     NAME
     CREATED_AT
@@ -34,7 +41,14 @@ input UserFilterInput {
 }
 
 input CreateUserInput {
-    name: String!
+
+    id: ID!
+    username: String!
+    password: String!
+    full_name: String!
+    email: String!
+    role: ROLE_TYPE!
+
 }
 
 type UserOps {
@@ -45,10 +59,10 @@ type UserQueries {
     list(filter: UserFilterInput): UserConnection! @goField(forceResolver: true)
 }
 
-extend type Mutation {
+type Mutation {
     user: UserOps! @goField(forceResolver: true)
 }
 
-extend type Query {
+type Query {
     user: UserQueries! @goField(forceResolver: true)
 }

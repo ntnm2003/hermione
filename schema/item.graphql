@@ -1,0 +1,41 @@
+type item {
+    id: ID!
+    item: String!
+    price: Int!
+    remainingAmount: Int!
+    soldAmount: Int!
+    exp: Time!
+    vendorID: Vendor!
+    createdAt: Time
+    updatedAt: Time
+}
+input CreateItemInput {
+
+    id: ID!
+    item: String!
+    price: Int!
+    remainingAmount: Int!
+    exp: Time!
+    vendorID: String!
+}
+input BuyItemInput {
+    id: ID!
+    item: String!
+    sold_amount: Int!
+}
+type ItemQueries {
+    list: [item!]! @goField(forceResolver: true)
+    topList: [item!] @goField(forceResolver: true)
+    expList: [item!] @goField(forceResolver: true)
+    revenue: Int @goField(forceResolver: true)
+}
+type ItemOps{
+    create(input: CreateUserInput!): item! @goField(forceResolver: true)
+    buy(input: BuyItemInput!): item! @goField(forceResolver: true)
+}
+extend type Query {
+    item: ItemQueries! @goField(forceResolver: true)
+}
+extend type Mutation {
+    items: ItemOps! @goField(forceResolver: true)
+}
