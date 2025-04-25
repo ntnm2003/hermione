@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-# Hermione2
+# HermioneNguyen
 
 
 
